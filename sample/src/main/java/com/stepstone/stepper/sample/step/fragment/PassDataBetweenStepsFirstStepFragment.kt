@@ -66,6 +66,10 @@ internal class PassDataBetweenStepsFirstStepFragment : ButterKnifeFragment(), Bl
         callback.goToNextStep()
     }
 
+    override fun canJumpToStepPosition(jumpToStepPosition: Int): Boolean {
+        return false
+    }
+
     override fun onCompleteClicked(callback: StepperLayout.OnCompleteClickedCallback) {
         callback.complete()
     }

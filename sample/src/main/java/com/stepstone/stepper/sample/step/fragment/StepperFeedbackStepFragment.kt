@@ -16,18 +16,17 @@ limitations under the License.
 
 package com.stepstone.stepper.sample.step.fragment
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.os.Handler
 import android.support.annotation.UiThread
 import android.view.View
 import android.widget.TextView
-
+import butterknife.BindView
 import com.stepstone.stepper.BlockingStep
 import com.stepstone.stepper.StepperLayout
 import com.stepstone.stepper.VerificationError
 import com.stepstone.stepper.sample.R
-
-import butterknife.BindView
 
 internal class StepperFeedbackStepFragment : ButterKnifeFragment(), BlockingStep {
 
@@ -47,9 +46,10 @@ internal class StepperFeedbackStepFragment : ButterKnifeFragment(), BlockingStep
     @BindView(R.id.stepContent)
     lateinit var stepContent: TextView
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+    @SuppressLint("SetTextI18n")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        stepContent.text = "Step content #${arguments.getInt(STEP_POSITION)} \n ${getString(R.string.lorem_ipsum)}"
+        stepContent.text = "Step content #${arguments!!.getInt(STEP_POSITION)} \n ${getString(R.string.lorem_ipsum)}"
     }
 
     override fun verifyStep(): VerificationError? {
@@ -67,6 +67,10 @@ internal class StepperFeedbackStepFragment : ButterKnifeFragment(), BlockingStep
             callback.goToNextStep()
             callback.stepperLayout.hideProgress()
         }, 2000L)
+    }
+
+    override fun canJumpToStepPosition(jumpToStepPosition: Int): Boolean {
+        return false
     }
 
     override fun onCompleteClicked(callback: StepperLayout.OnCompleteClickedCallback) {
