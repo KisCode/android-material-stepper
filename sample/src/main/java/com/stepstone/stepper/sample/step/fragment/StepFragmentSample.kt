@@ -24,12 +24,13 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import butterknife.BindView
-import com.stepstone.stepper.Step
+import com.stepstone.stepper.BlockingStep
+import com.stepstone.stepper.StepperLayout
 import com.stepstone.stepper.VerificationError
 import com.stepstone.stepper.sample.OnNavigationBarListener
 import com.stepstone.stepper.sample.R
 
-internal class StepFragmentSample : ButterKnifeFragment(), Step {
+internal class StepFragmentSample : ButterKnifeFragment(), BlockingStep {
 
     companion object {
 
@@ -88,9 +89,28 @@ internal class StepFragmentSample : ButterKnifeFragment(), Step {
     private val isAboveThreshold: Boolean
         get() = i >= TAP_THRESHOLD
 
+    override fun onBackClicked(callback: StepperLayout.OnBackClickedCallback?) {
+    }
+
     override fun onSelected() {
         updateNavigationBar()
     }
+
+    override fun onCompleteClicked(callback: StepperLayout.OnCompleteClickedCallback?) {
+    }
+
+    override fun onNextClicked(callback: StepperLayout.OnNextClickedCallback?) {
+
+    }
+
+    /***
+     *
+     */
+    override fun canJumpToStepPosition(jumpToStepPosition: Int): Boolean {
+        //if you need jump to the specified position,return true
+        return true
+    }
+
 
     override fun onError(error: VerificationError) {
         button.startAnimation(AnimationUtils.loadAnimation(activity, R.anim.shake_error))

@@ -77,6 +77,10 @@ internal class DelayedTransitionStepFragmentSample : ButterKnifeFragment(), Bloc
         }, 2000L)
     }
 
+    override fun canJumpToStepPosition(jumpToStepPosition: Int): Boolean {
+        return false
+    }
+
     /**
      * Notifies this step that the complete button/tab was clicked, the step was verified
      * and the user can complete the flow. This is so that the current step might perform

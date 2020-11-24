@@ -22,13 +22,11 @@ import android.os.Handler
 import android.support.annotation.UiThread
 import android.view.View
 import android.widget.TextView
-
+import butterknife.BindView
 import com.stepstone.stepper.BlockingStep
 import com.stepstone.stepper.StepperLayout
 import com.stepstone.stepper.VerificationError
 import com.stepstone.stepper.sample.R
-
-import butterknife.BindView
 
 internal class StepperFeedbackStepFragment : ButterKnifeFragment(), BlockingStep {
 
@@ -69,6 +67,10 @@ internal class StepperFeedbackStepFragment : ButterKnifeFragment(), BlockingStep
             callback.goToNextStep()
             callback.stepperLayout.hideProgress()
         }, 2000L)
+    }
+
+    override fun canJumpToStepPosition(jumpToStepPosition: Int): Boolean {
+        return false
     }
 
     override fun onCompleteClicked(callback: StepperLayout.OnCompleteClickedCallback) {

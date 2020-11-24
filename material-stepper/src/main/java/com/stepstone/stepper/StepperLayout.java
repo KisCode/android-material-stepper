@@ -36,6 +36,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.LinearLayoutCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -70,215 +71,55 @@ import com.stepstone.stepper.viewmodel.StepViewModel;
 public class StepperLayout extends LinearLayout implements TabsContainer.TabItemListener {
 
     public static final int DEFAULT_TAB_DIVIDER_WIDTH = -1;
-
-    /**
-     * A listener for events of {@link StepperLayout}.
-     */
-    public interface StepperListener {
-
-        /**
-         * Called when all of the steps were completed successfully
-         *
-         * @param completeButton the complete button that was clicked to complete the flow
-         */
-        void onCompleted(View completeButton);
-
-        /**
-         * Called when a verification error occurs for one of the steps
-         *
-         * @param verificationError verification error
-         */
-        void onError(VerificationError verificationError);
-
-        /**
-         * Called when the current step position changes
-         *
-         * @param newStepPosition new step position
-         */
-        void onStepSelected(int newStepPosition);
-
-        /**
-         * Called when the Previous step button was pressed while on the first step
-         * (the button is not present by default on first step).
-         */
-        void onReturn();
-
-        StepperListener NULL = new StepperListener() {
-            @Override
-            public void onCompleted(View completeButton) {
-            }
-
-            @Override
-            public void onError(VerificationError verificationError) {
-            }
-
-            @Override
-            public void onStepSelected(int newStepPosition) {
-            }
-
-            @Override
-            public void onReturn() {
-            }
-        };
-    }
-
-    public abstract class AbstractOnButtonClickedCallback {
-
-        public StepperLayout getStepperLayout() {
-            return StepperLayout.this;
-        }
-
-    }
-
-    public class OnNextClickedCallback extends AbstractOnButtonClickedCallback {
-
-        @UiThread
-        public void goToNextStep() {
-            final int totalStepCount = mStepAdapter.getCount();
-
-            if (mCurrentStepPosition >= totalStepCount - 1) {
-                return;
-            }
-
-            mCurrentStepPosition++;
-            onUpdate(mCurrentStepPosition, true);
-        }
-
-    }
-
-    public class OnCompleteClickedCallback extends AbstractOnButtonClickedCallback {
-
-        @UiThread
-        public void complete() {
-            invalidateCurrentPosition();
-            mListener.onCompleted(mCompleteNavigationButton);
-        }
-
-    }
-
-    public class OnBackClickedCallback extends AbstractOnButtonClickedCallback {
-
-        @UiThread
-        public void goToPrevStep() {
-            if (mCurrentStepPosition <= 0) {
-                if (mShowBackButtonOnFirstStep) {
-                    mListener.onReturn();
-                }
-                return;
-            }
-            mCurrentStepPosition--;
-            onUpdate(mCurrentStepPosition, true);
-        }
-
-    }
-
-    private class OnBackClickListener implements OnClickListener {
-        @Override
-        public void onClick(View v) {
-            onBackClicked();
-        }
-    }
-
-    private class OnNextClickListener implements OnClickListener {
-        @Override
-        public void onClick(View v) {
-            onNext();
-        }
-    }
-
-    private class OnCompleteClickListener implements OnClickListener {
-        @Override
-        public void onClick(View v) {
-            onComplete();
-        }
-    }
-
+    private static final String TAG = "StepperLayout";
     private ViewPager mPager;
-
     private Button mBackNavigationButton;
-
     private RightNavigationButton mNextNavigationButton;
-
     private RightNavigationButton mCompleteNavigationButton;
-
     private ViewGroup mStepNavigation;
-
     private DottedProgressBar mDottedProgressBar;
-
     private ColorableProgressBar mProgressBar;
-
     private TabsContainer mTabsContainer;
-
     private ColorStateList mBackButtonColor;
-
     private ColorStateList mNextButtonColor;
-
     private ColorStateList mCompleteButtonColor;
-
     @ColorInt
     private int mUnselectedColor;
-
     @ColorInt
     private int mSelectedColor;
-
     @ColorInt
     private int mErrorColor;
-
     @DrawableRes
     private int mBottomNavigationBackground;
-
     @DrawableRes
     private int mBackButtonBackground;
-
     @DrawableRes
     private int mNextButtonBackground;
-
     @DrawableRes
     private int mCompleteButtonBackground;
-
     private int mTabStepDividerWidth = DEFAULT_TAB_DIVIDER_WIDTH;
-
     private String mBackButtonText;
-
     private String mNextButtonText;
-
     private String mCompleteButtonText;
-
     private boolean mShowBackButtonOnFirstStep;
-
     private boolean mShowBottomNavigation;
-
     private int mTypeIdentifier = AbstractStepperType.PROGRESS_BAR;
-
     private int mFeedbackTypeMask = StepperFeedbackType.NONE;
-
     private StepAdapter mStepAdapter;
-
     private AbstractStepperType mStepperType;
-
     private StepperFeedbackType mStepperFeedbackType;
-
     @FloatRange(from = 0.0f, to = 1.0f)
     private float mContentFadeAlpha = AnimationUtil.ALPHA_HALF;
-
     @DrawableRes
     private int mContentOverlayBackground;
-
     private int mCurrentStepPosition;
-
     private boolean mShowErrorStateEnabled;
-
     private boolean mShowErrorStateOnBackEnabled;
-
     private boolean mShowErrorMessageEnabled;
-
     private boolean mTabNavigationEnabled;
-
     private boolean mInProgress;
-
     @StyleRes
     private int mStepperLayoutTheme;
-
     @NonNull
     private StepperListener mListener = StepperListener.NULL;
 
@@ -382,8 +223,23 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     @UiThread
     public void onTabClicked(int position) {
         if (mTabNavigationEnabled) {
+
             if (position > mCurrentStepPosition) {
-                onNext();
+                if (position == mCurrentStepPosition + 1) {
+                    onNext();
+                } else {
+                    Log.i(TAG, "setCurrentStepPosition:" + position);
+                    onJumpStep(position);
+//                    setCurrentStepPosition(position);
+                    /*for (int i = mCurrentStepPosition; i <= position; i++) {
+                        Step step = findStep(i);
+                        if (step == null || verifyCurrentStep(step)) {
+                            invalidateCurrentPosition();
+                            return;
+                        }
+                    }
+                    setCurrentStepPosition(position);*/
+                }
             } else if (position < mCurrentStepPosition) {
                 setCurrentStepPosition(position);
             }
@@ -419,6 +275,15 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     }
 
     /**
+     * Returns the position of the currently selected step.
+     *
+     * @return position of the currently selected step
+     */
+    public int getCurrentStepPosition() {
+        return mCurrentStepPosition;
+    }
+
+    /**
      * Sets the current step to the one at the provided index.
      * This does not verify the current step.
      *
@@ -432,15 +297,6 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
         mCurrentStepPosition = currentStepPosition;
 
         onUpdate(currentStepPosition, true);
-    }
-
-    /**
-     * Returns the position of the currently selected step.
-     *
-     * @return position of the currently selected step
-     */
-    public int getCurrentStepPosition() {
-        return mCurrentStepPosition;
     }
 
     /**
@@ -517,15 +373,6 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     }
 
     /**
-     * Set whether when going backwards should clear the error state from the Tab. Default is <code>false</code>.
-     *
-     * @param showErrorStateOnBackEnabled true if navigating backwards should keep the error state, false otherwise
-     */
-    public void setShowErrorStateOnBackEnabled(boolean showErrorStateOnBackEnabled) {
-        this.mShowErrorStateOnBackEnabled = showErrorStateOnBackEnabled;
-    }
-
-    /**
      * Set whether the errors should be displayed when they occur or not. Default is <code>false</code>.
      *
      * @param showErrorState true if the errors should be displayed when they occur, false otherwise
@@ -534,6 +381,13 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     @Deprecated
     public void setShowErrorState(boolean showErrorState) {
         setShowErrorStateEnabled(showErrorState);
+    }
+
+    /**
+     * @return true if errors should be displayed when they occur
+     */
+    public boolean isShowErrorStateEnabled() {
+        return mShowErrorStateEnabled;
     }
 
     /**
@@ -546,17 +400,26 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     }
 
     /**
-     * @return true if errors should be displayed when they occur
-     */
-    public boolean isShowErrorStateEnabled() {
-        return mShowErrorStateEnabled;
-    }
-
-    /**
      * @return true if when going backwards the error state from the Tab should be cleared
      */
     public boolean isShowErrorStateOnBackEnabled() {
         return mShowErrorStateOnBackEnabled;
+    }
+
+    /**
+     * Set whether when going backwards should clear the error state from the Tab. Default is <code>false</code>.
+     *
+     * @param showErrorStateOnBackEnabled true if navigating backwards should keep the error state, false otherwise
+     */
+    public void setShowErrorStateOnBackEnabled(boolean showErrorStateOnBackEnabled) {
+        this.mShowErrorStateOnBackEnabled = showErrorStateOnBackEnabled;
+    }
+
+    /**
+     * @return true if an error message below step title should appear when an error occurs
+     */
+    public boolean isShowErrorMessageEnabled() {
+        return mShowErrorMessageEnabled;
     }
 
     /**
@@ -566,13 +429,6 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
      */
     public void setShowErrorMessageEnabled(boolean showErrorMessageEnabled) {
         this.mShowErrorMessageEnabled = showErrorMessageEnabled;
-    }
-
-    /**
-     * @return true if an error message below step title should appear when an error occurs
-     */
-    public boolean isShowErrorMessageEnabled() {
-        return mShowErrorMessageEnabled;
     }
 
     /**
@@ -933,6 +789,13 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
         return position == mStepAdapter.getCount() - 1;
     }
 
+    private Step findStep(int position) {
+        if (position >= 0 && position < mStepAdapter.getCount()) {
+            return mStepAdapter.findStep(position);
+        }
+        return null;
+    }
+
     private Step findCurrentStep() {
         return mStepAdapter.findStep(mCurrentStepPosition);
     }
@@ -955,6 +818,23 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
             ((BlockingStep) step).onNextClicked(onNextClickedCallback);
         } else {
             onNextClickedCallback.goToNextStep();
+        }
+    }
+
+    //跳转到制定步骤
+    @UiThread
+    private void onJumpStep(int position) {
+        Step step = findCurrentStep();
+
+        if (verifyCurrentStep(step)) {
+            invalidateCurrentPosition();
+            return;
+        }
+        OnJumpStepClickedCallback callback = new OnJumpStepClickedCallback();
+        if (step instanceof BlockingStep) {
+            if (((BlockingStep) step).canJumpToStepPosition(position)) {
+                callback.jumpToStep(position);
+            }
         }
     }
 
@@ -1047,6 +927,135 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
             mBackNavigationButton.setText(mBackButtonText);
         } else {
             mBackNavigationButton.setText(backButtonTextForStep);
+        }
+    }
+
+    /**
+     * A listener for events of {@link StepperLayout}.
+     */
+    public interface StepperListener {
+
+        StepperListener NULL = new StepperListener() {
+            @Override
+            public void onCompleted(View completeButton) {
+            }
+
+            @Override
+            public void onError(VerificationError verificationError) {
+            }
+
+            @Override
+            public void onStepSelected(int newStepPosition) {
+            }
+
+            @Override
+            public void onReturn() {
+            }
+        };
+
+        /**
+         * Called when all of the steps were completed successfully
+         *
+         * @param completeButton the complete button that was clicked to complete the flow
+         */
+        void onCompleted(View completeButton);
+
+        /**
+         * Called when a verification error occurs for one of the steps
+         *
+         * @param verificationError verification error
+         */
+        void onError(VerificationError verificationError);
+
+        /**
+         * Called when the current step position changes
+         *
+         * @param newStepPosition new step position
+         */
+        void onStepSelected(int newStepPosition);
+
+        /**
+         * Called when the Previous step button was pressed while on the first step
+         * (the button is not present by default on first step).
+         */
+        void onReturn();
+    }
+
+    public abstract class AbstractOnButtonClickedCallback {
+
+        public StepperLayout getStepperLayout() {
+            return StepperLayout.this;
+        }
+
+    }
+
+    public class OnNextClickedCallback extends AbstractOnButtonClickedCallback {
+
+        @UiThread
+        public void goToNextStep() {
+            final int totalStepCount = mStepAdapter.getCount();
+
+            if (mCurrentStepPosition >= totalStepCount - 1) {
+                return;
+            }
+
+            mCurrentStepPosition++;
+            onUpdate(mCurrentStepPosition, true);
+        }
+
+    }
+
+    public class OnCompleteClickedCallback extends AbstractOnButtonClickedCallback {
+
+        @UiThread
+        public void complete() {
+            invalidateCurrentPosition();
+            mListener.onCompleted(mCompleteNavigationButton);
+        }
+
+    }
+
+    public class OnJumpStepClickedCallback extends AbstractOnButtonClickedCallback {
+        @UiThread
+        public void jumpToStep(int position) {
+            setCurrentStepPosition(position);
+        }
+    }
+
+    public class OnBackClickedCallback extends AbstractOnButtonClickedCallback {
+
+        @UiThread
+        public void goToPrevStep() {
+            if (mCurrentStepPosition <= 0) {
+                if (mShowBackButtonOnFirstStep) {
+                    mListener.onReturn();
+                }
+                return;
+            }
+            mCurrentStepPosition--;
+            onUpdate(mCurrentStepPosition, true);
+        }
+
+    }
+
+    private class OnBackClickListener implements OnClickListener {
+        @Override
+        public void onClick(View v) {
+            onBackClicked();
+        }
+    }
+
+    private class OnNextClickListener implements OnClickListener {
+        @Override
+        public void onClick(View v) {
+            onNext();
+        }
+    }
+
+    private class OnCompleteClickListener implements OnClickListener {
+        @Override
+        public void onClick(View v) {
+            onComplete();
         }
     }
 }

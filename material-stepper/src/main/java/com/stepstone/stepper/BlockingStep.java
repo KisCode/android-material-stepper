@@ -59,4 +59,12 @@ public interface BlockingStep extends Step {
     @UiThread
     void onBackClicked(StepperLayout.OnBackClickedCallback callback);
 
+
+    /***
+     * Notifies this step that the previous tab was clicked to jump target
+     * @param jumpToStepPosition target position
+     * @return if you need jump to the specified position,return true ,else return false
+     */
+    @UiThread
+    boolean canJumpToStepPosition(int jumpToStepPosition);
 }
